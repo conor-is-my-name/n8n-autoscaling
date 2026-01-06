@@ -3,6 +3,8 @@ volumes:
   redis_data:
   n8n_main:
   n8n_webhook:
+  lab_evolution_instances: # Added from Evolution API setup
+  n8n_temp_storage: # <--- DOCKER VOLUME FOR TEMP FILES (shared between n8n services)
 
 networks:
   n8n-network:
@@ -32,6 +34,7 @@ x-n8n: &service-n8n
     - WEBHOOK_URL=${WEBHOOK_URL}
     - N8N_EDITOR_BASE_URL=${N8N_EDITOR_BASE_URL}
     - N8N_DATA_TABLES_MAX_SIZE_BYTES=${N8N_DATA_TABLES_MAX_SIZE_BYTES}
+    - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
     # Queue mode config
     - EXECUTIONS_MODE=${EXECUTIONS_MODE}
     - QUEUE_BULL_REDIS_HOST=${QUEUE_BULL_REDIS_HOST}
@@ -99,7 +102,7 @@ services:
     image: pgvector/pgvector:pg17
     restart: unless-stopped
     ports:
-      - "${TAILSCALE_IP}:5432:5432" # Bind to Tailscale IP if set, otherwise all interfaces
+      - "5432:5432" # Bind to Tailscale IP if set, otherwise all interfaces
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
@@ -123,10 +126,11 @@ services:
   n8n:
     <<: *service-n8n
     ports:
-      - "${TAILSCALE_IP}:5678:5678"
-      - "${TAILSCALE_IP}:5679:5679"
+      - "5678:5678"
+      - "5679:5679"
     volumes:
       - n8n_main:/n8n
+      - n8n_temp_storage:/tmp/n8n_share # <--- SHARED TEMP STORAGE
     depends_on:
       postgres:
         condition: service_healthy
@@ -162,7 +166,8 @@ services:
     <<: *service-n8n
     command: webhook
     volumes:
-      - n8n_webhook:/n8n
+      - n8n_main:/n8n                    # <--- Uses n8n_main for consistency
+      - n8n_temp_storage:/tmp/n8n_share # <--- SHARED TEMP STORAGE
     depends_on:
       n8n:
         condition: service_healthy
@@ -179,6 +184,7 @@ services:
     command: worker
     volumes:
       - n8n_main:/n8n
+      - n8n_temp_storage:/tmp/n8n_share # <--- SHARED TEMP STORAGE
     depends_on:
       n8n:
         condition: service_healthy
@@ -201,7 +207,7 @@ services:
     <<: *service-task-runner
     environment:
       - N8N_RUNNERS_AUTH_TOKEN=${N8N_RUNNERS_AUTH_TOKEN}
-      - N8N_RUNNERS_TASK_BROKER_URI=http://n8n-worker:5679
+      - N8N_RUNNERS_TASK_BROKER_URI=http://n8n:5679  # All runners connect to main n8n broker
       - N8N_RUNNERS_MAX_CONCURRENCY=${N8N_RUNNERS_MAX_CONCURRENCY}
       - N8N_RUNNERS_AUTO_SHUTDOWN_TIMEOUT=${N8N_RUNNERS_AUTO_SHUTDOWN_TIMEOUT}
       - NODE_FUNCTION_ALLOW_EXTERNAL=${NODE_FUNCTION_ALLOW_EXTERNAL}
@@ -272,3 +278,18 @@ services:
         condition: service_started # or service_healthy if you have a healthcheck that passes with 0 initial replicas
     networks:
       - n8n-network
+  evolution-api:
+    container_name: lab_evolution_api
+    image: evoapicloud/evolution-api:latest
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    volumes:
+      - lab_evolution_instances:/lab_evolution/instances
+    env_file:
+      - .env
+    networks:
+      - n8n-network # Changed from 'minha_rede'
+    depends_on:
+      - postgres
+      - redis
