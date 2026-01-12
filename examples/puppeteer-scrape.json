@@ -1,0 +1,40 @@
+{
+  "name": "Puppeteer Web Scraping Example",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start-node",
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const puppeteer = require('puppeteer-core');\n\nconst browser = await puppeteer.launch({\n  executablePath: '/usr/bin/chromium-browser',\n  headless: true,\n  args: [\n    '--no-sandbox',\n    '--disable-setuid-sandbox',\n    '--disable-dev-shm-usage',\n    '--disable-gpu'\n  ]\n});\n\nconst page = await browser.newPage();\n\n// Set a realistic user agent\nawait page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');\n\nawait page.goto('https://news.ycombinator.com', { waitUntil: 'domcontentloaded' });\n\n// Scrape the top stories\nconst stories = await page.evaluate(() => {\n  const items = document.querySelectorAll('.athing');\n  return Array.from(items).slice(0, 10).map(item => {\n    const titleEl = item.querySelector('.titleline > a');\n    const subtextEl = item.nextElementSibling;\n    const scoreEl = subtextEl?.querySelector('.score');\n    const ageEl = subtextEl?.querySelector('.age');\n    \n    return {\n      title: titleEl?.textContent || '',\n      url: titleEl?.href || '',\n      score: scoreEl?.textContent || '0 points',\n      age: ageEl?.textContent || ''\n    };\n  });\n});\n\nawait browser.close();\n\nreturn stories.map(story => ({ json: story }));"
+      },
+      "id": "puppeteer-node",
+      "name": "Scrape Hacker News",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [
+        [
+          {
+            "node": "Scrape Hacker News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "n8n-autoscaling-example"
+  }
+}

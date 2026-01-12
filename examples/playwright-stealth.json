@@ -1,0 +1,40 @@
+{
+  "name": "Playwright Stealth Example",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start-node",
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { chromium } = require('playwright-extra');\nconst StealthPlugin = require('puppeteer-extra-plugin-stealth');\n\n// Add stealth plugin to avoid bot detection\nchromium.use(StealthPlugin());\n\n// Use hardcoded path - consistent in our Docker setup\n// Alternatively use $env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH if N8N_BLOCK_ENV_ACCESS_IN_NODE=false\nconst browser = await chromium.launch({\n  executablePath: '/usr/bin/chromium-browser',\n  headless: true,\n  args: [\n    '--no-sandbox',\n    '--disable-setuid-sandbox',\n    '--disable-dev-shm-usage',\n    '--disable-gpu'\n  ]\n});\n\nconst page = await browser.newPage();\n\n// Test against a bot detection site\nawait page.goto('https://bot.sannysoft.com', { waitUntil: 'networkidle' });\n\n// Wait for tests to complete\nawait new Promise(resolve => setTimeout(resolve, 3000));\n\nconst title = await page.title();\nconst screenshot = await page.screenshot({ fullPage: true });\n\nawait browser.close();\n\nreturn [{\n  json: {\n    title,\n    url: 'https://bot.sannysoft.com',\n    note: 'Check the screenshot - green results mean stealth is working'\n  },\n  binary: {\n    screenshot: {\n      data: screenshot.toString('base64'),\n      mimeType: 'image/png',\n      fileName: 'bot-detection-test.png'\n    }\n  }\n}];"
+      },
+      "id": "playwright-node",
+      "name": "Playwright Stealth Test",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [
+        [
+          {
+            "node": "Playwright Stealth Test",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "n8n-autoscaling-example"
+  }
+}

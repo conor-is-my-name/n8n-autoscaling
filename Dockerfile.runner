@@ -40,18 +40,26 @@ WORKDIR /opt/runners/task-runner-javascript
 RUN /usr/local/bin/node /usr/local/lib/node_modules/corepack/dist/corepack.js pnpm add \
     ajv \
     ajv-formats \
-    puppeteer-core@22.15.0
+    puppeteer-core@22.15.0 \
+    puppeteer-extra \
+    puppeteer-extra-plugin-stealth \
+    playwright-core \
+    playwright-extra
 
 # Copy custom task runner config that:
-# - Removes --disable-proto=delete flag (allows puppeteer to work)
-# - Allowlists puppeteer-core and other packages
-# - Sets PUPPETEER_EXECUTABLE_PATH in env-overrides
+# - Removes --disable-proto=delete flag (allows puppeteer/playwright to work)
+# - Allowlists puppeteer-core, playwright-core and other packages
+# - Sets PUPPETEER_EXECUTABLE_PATH and PLAYWRIGHT env vars in env-overrides
 COPY n8n-task-runners.json /etc/n8n-task-runners.json
 RUN chmod 644 /etc/n8n-task-runners.json
 
 # Set Puppeteer to use system Chromium
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+
+# Set Playwright to use system Chromium (skip browser download)
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 USER runner
 WORKDIR /home/runner

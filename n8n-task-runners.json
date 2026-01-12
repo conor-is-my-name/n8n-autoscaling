@@ -21,15 +21,19 @@
 				"DEPLOYMENT_NAME",
 				"HOME",
 				"PUPPETEER_EXECUTABLE_PATH",
-				"PUPPETEER_SKIP_CHROMIUM_DOWNLOAD"
+				"PUPPETEER_SKIP_CHROMIUM_DOWNLOAD",
+				"PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD",
+				"PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH"
 			],
 			"env-overrides": {
 				"NODE_ENV": "test",
 				"NODE_FUNCTION_ALLOW_BUILTIN": "crypto,path,fs,url",
-				"NODE_FUNCTION_ALLOW_EXTERNAL": "moment,ajv,ajv-formats,puppeteer-core,puppeteer",
+				"NODE_FUNCTION_ALLOW_EXTERNAL": "moment,ajv,ajv-formats,puppeteer-core,puppeteer-extra,puppeteer-extra-plugin-stealth,playwright-core,playwright-extra",
 				"N8N_RUNNERS_HEALTH_CHECK_SERVER_HOST": "0.0.0.0",
 				"PUPPETEER_EXECUTABLE_PATH": "/usr/bin/chromium-browser",
-				"PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true"
+				"PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true",
+				"PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+				"PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH": "/usr/bin/chromium-browser"
 			}
 		},
 		{

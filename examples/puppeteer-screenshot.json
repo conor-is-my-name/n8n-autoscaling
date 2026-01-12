@@ -1,0 +1,40 @@
+{
+  "name": "Puppeteer Screenshot Example",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start-node",
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const puppeteer = require('puppeteer-core');\n\nconst browser = await puppeteer.launch({\n  executablePath: '/usr/bin/chromium-browser',\n  headless: true,\n  args: [\n    '--no-sandbox',\n    '--disable-setuid-sandbox',\n    '--disable-dev-shm-usage',\n    '--disable-gpu'\n  ]\n});\n\nconst page = await browser.newPage();\nawait page.setViewport({ width: 1280, height: 720 });\n\nawait page.goto('https://example.com', { waitUntil: 'networkidle0' });\n\nconst title = await page.title();\nconst screenshot = await page.screenshot({ encoding: 'base64' });\n\nawait browser.close();\n\nreturn [{\n  json: {\n    title,\n    url: 'https://example.com'\n  },\n  binary: {\n    screenshot: {\n      data: screenshot,\n      mimeType: 'image/png',\n      fileName: 'screenshot.png'\n    }\n  }\n}];"
+      },
+      "id": "puppeteer-node",
+      "name": "Puppeteer Screenshot",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [
+        [
+          {
+            "node": "Puppeteer Screenshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "n8n-autoscaling-example"
+  }
+}

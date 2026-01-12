@@ -1,0 +1,40 @@
+{
+  "name": "Playwright Web Scraping Example",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start-node",
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { chromium } = require('playwright-core');\n\nconst browser = await chromium.launch({\n  executablePath: '/usr/bin/chromium-browser',\n  headless: true,\n  args: [\n    '--no-sandbox',\n    '--disable-setuid-sandbox',\n    '--disable-dev-shm-usage',\n    '--disable-gpu'\n  ]\n});\n\nconst context = await browser.newContext({\n  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'\n});\n\nconst page = await context.newPage();\n\nawait page.goto('https://news.ycombinator.com', { waitUntil: 'domcontentloaded' });\n\n// Scrape the top stories using Playwright's locators\nconst storyElements = await page.locator('.athing').all();\n\nconst stories = [];\nfor (const item of storyElements.slice(0, 10)) {\n  const titleEl = item.locator('.titleline > a');\n  const subtextEl = page.locator(`#score_${await item.getAttribute('id')}`);\n  \n  stories.push({\n    title: await titleEl.textContent() || '',\n    url: await titleEl.getAttribute('href') || '',\n    score: await subtextEl.textContent().catch(() => '0 points')\n  });\n}\n\nawait browser.close();\n\nreturn stories.map(story => ({ json: story }));"
+      },
+      "id": "playwright-node",
+      "name": "Scrape Hacker News",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [
+        [
+          {
+            "node": "Scrape Hacker News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "n8n-autoscaling-example"
+  }
+}

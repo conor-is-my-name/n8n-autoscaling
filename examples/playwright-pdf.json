@@ -1,0 +1,40 @@
+{
+  "name": "Playwright PDF Generation Example",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start-node",
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { chromium } = require('playwright-core');\n\nconst browser = await chromium.launch({\n  executablePath: '/usr/bin/chromium-browser',\n  headless: true,\n  args: [\n    '--no-sandbox',\n    '--disable-setuid-sandbox',\n    '--disable-dev-shm-usage',\n    '--disable-gpu'\n  ]\n});\n\nconst page = await browser.newPage();\n\nawait page.goto('https://example.com', { waitUntil: 'networkidle' });\n\nconst title = await page.title();\n\n// Generate PDF\nconst pdfBuffer = await page.pdf({\n  format: 'A4',\n  printBackground: true,\n  margin: {\n    top: '20px',\n    right: '20px',\n    bottom: '20px',\n    left: '20px'\n  }\n});\n\nawait browser.close();\n\nreturn [{\n  json: {\n    title,\n    url: 'https://example.com',\n    generatedAt: new Date().toISOString()\n  },\n  binary: {\n    pdf: {\n      data: pdfBuffer.toString('base64'),\n      mimeType: 'application/pdf',\n      fileName: 'page.pdf'\n    }\n  }\n}];"
+      },
+      "id": "playwright-node",
+      "name": "Generate PDF",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [
+        [
+          {
+            "node": "Generate PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "n8n-autoscaling-example"
+  }
+}
