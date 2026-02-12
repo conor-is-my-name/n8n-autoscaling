@@ -207,10 +207,10 @@ services:
       - shark
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://localhost:5678/healthz || exit 1"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
       retries: 10
-      start_period: 30s
+      start_period: 10s
 
   # Task runner sidecar for workers (n8n 2.0 requirement)
   # Must be scaled 1:1 with n8n-worker
@@ -228,13 +228,13 @@ services:
       - N8N_RUNNERS_INSECURE_MODE=true
     depends_on:
       n8n-worker:
-        condition: service_healthy
+        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "pgrep -f 'node.*runner' || exit 1"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
       retries: 5
-      start_period: 15s
+      start_period: 10s
 
   n8n-backup:
     profiles: [backup]
